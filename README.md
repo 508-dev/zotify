@@ -1,6 +1,8 @@
 # Zotify
 
-## A highly customizable music and podcast downloader
+## An opinionated Zotify fork built for ease of use and reliability
+
+Based on [Googolplexed0/zotify](https://github.com/Googolplexed0/zotify).
 
 <p align="center">
   <img src="https://i.imgur.com/hGXQWSl.png" width="50%" alt="Zotify logo">
@@ -25,14 +27,17 @@
 
 - Python 3.10 or greater
 - FFmpeg
+- Git (for installation from GitHub)
 
 ## Installation And Updating
+
+The installation process is the same as upstream; use this fork's repository URL below. Its pinned librespot dependency is installed automatically.
 
 <details open><summary><strong>Install as Executable</strong></summary>
 
 *Useable across system from the command line*
 
-`pipx install git+https://github.com/Googolplexed0/zotify.git`
+`pipx install git+https://github.com/michaelmwu/zotify.git`
 
 </details>
 
@@ -40,7 +45,7 @@
 
 *Useable when launched as a Python module*
 
-`python -m pip install git+https://github.com/Googolplexed0/zotify.git`
+`python -m pip install git+https://github.com/michaelmwu/zotify.git`
 
 </details>
 
@@ -49,10 +54,10 @@
 *Update in accordance with your install method*
 
 **If Executable (pipx):**
-`pipx install -f git+https://github.com/Googolplexed0/zotify.git`
+`pipx install -f git+https://github.com/michaelmwu/zotify.git`
 
 **If Module:**
-`python -m pip install --force-reinstall git+https://github.com/Googolplexed0/zotify.git`
+`python -m pip install --force-reinstall git+https://github.com/michaelmwu/zotify.git`
 
 </details>
 
