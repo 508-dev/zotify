@@ -1,6 +1,6 @@
 # Installing Zotify
 
-These instructions install the michaelmwu fork. Its pinned librespot dependency is installed automatically.
+These instructions install this fork. Its pinned librespot dependency is installed automatically.
 
 > **Windows**
 
