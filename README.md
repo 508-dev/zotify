@@ -37,7 +37,7 @@ The installation process is the same as upstream; use this fork's repository URL
 
 *Useable across system from the command line*
 
-`pipx install git+https://github.com/michaelmwu/zotify.git`
+`pipx install git+https://github.com/508-dev/zotify.git`
 
 </details>
 
@@ -45,7 +45,7 @@ The installation process is the same as upstream; use this fork's repository URL
 
 *Useable when launched as a Python module*
 
-`python -m pip install git+https://github.com/michaelmwu/zotify.git`
+`python -m pip install git+https://github.com/508-dev/zotify.git`
 
 </details>
 
@@ -54,10 +54,10 @@ The installation process is the same as upstream; use this fork's repository URL
 *Update in accordance with your install method*
 
 **If Executable (pipx):**
-`pipx install -f git+https://github.com/michaelmwu/zotify.git`
+`pipx install -f git+https://github.com/508-dev/zotify.git`
 
 **If Module:**
-`python -m pip install --force-reinstall git+https://github.com/michaelmwu/zotify.git`
+`python -m pip install --force-reinstall git+https://github.com/508-dev/zotify.git`
 
 </details>
 
