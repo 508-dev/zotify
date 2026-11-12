@@ -45,11 +45,10 @@ def try_rel_path(path: PurePath | None, start: PurePath) -> PurePath | None:
 
 
 def check_path_dupes(path: PurePath) -> PurePath:
-    if not (Path(path).is_file() and Path(path).stat().st_size):
-        return path
-    c = len([file for file in Path(path.parent).iterdir() if file.match(path.stem + "*")])
-    new_path = path.with_stem(f"{path.stem}_{c}") # guaranteed to be unique
-    return new_path
+    if not file_has_content(path): return path
+    index = 1
+    while file_has_content(path.with_stem(f"{path.stem}_{index}")): index += 1
+    return path.with_stem(f"{path.stem}_{index}") # guaranteed to be unique
 
 
 def get_common_dir(allpaths: set[PurePath]) -> PurePath:
@@ -67,8 +66,8 @@ def walk_directory_for_tracks(root_path: PurePath):
 
 
 # Input Processing Utils
-def safe_typecast(d: dict, k: str, to_cast: type, except_channel: PrintChannel = PrintChannel.WARNING):
-    raw_val = d.get(k)
+def safe_typecast(d: dict, k: str, to_cast: type, default = None, except_channel: PrintChannel = PrintChannel.WARNING):
+    raw_val = d.get(k, default)
     if raw_val is None:
         return None
     elif isinstance(raw_val, to_cast):
