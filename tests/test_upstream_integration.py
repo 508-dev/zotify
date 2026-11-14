@@ -69,6 +69,16 @@ class UpstreamIntegrationTests(unittest.TestCase):
         self.assertEqual([resp['name'] for resp in resps], ['First', 'Second'])
         self.assertEqual(resps[1]['uri'], ':' + uris[1])
 
+    def test_stream_connection_error_is_handled_without_name_error(self):
+        track = self.api.Track('track:3333333333333333333333')
+        stack = self.api.ParentStack([self.query, track])
+        with patch.object(track, 'fetch_stream', side_effect=ConnectionError('offline')), \
+             patch.object(Zotify.CONFIG, 'get_retry_attempts', return_value=0), \
+             patch.object(self.api.Printer, 'hashtaged'):
+            result = track.fetch_stream_with_recovery(
+                self.tempdir.name + '/unwritten-audio', stack)
+        self.assertIsNone(result)
+
     def test_stream_runtime_error_reports_without_name_error(self):
         quality = SimpleNamespace(preferred=SimpleNamespace(name='test'))
         content = SimpleNamespace(id='one', type_attr='track', file_ids=None)

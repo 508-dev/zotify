@@ -8,6 +8,7 @@ from time import monotonic
 from uuid import uuid4
 from functools import wraps
 from collections.abc import Iterable
+from requests.exceptions import RequestException
 
 from zotify.config import Zotify, Streamer, HTTPError
 from zotify.utils import *
@@ -494,7 +495,7 @@ class DLContent(Content):
                 if parent_stack and isinstance(parent_stack[0], Query):
                     parent_stack[0].record_run_event("track_interrupted", uri=self.uri)
                 raise
-            except (ConnectionError, OSError, TimeoutError, requests.RequestException) as e:
+            except (ConnectionError, OSError, TimeoutError, RequestException) as e:
                 if attempt >= Zotify.CONFIG.get_retry_attempts():
                     Printer.hashtaged(PrintChannel.ERROR, f'FAILED TO FETCH OR READ STREAM AFTER {attempt + 1} ATTEMPTS\n'
                                                           f'{self.clsn.upper()}_ID: {self.id}\nERROR: {e}')
