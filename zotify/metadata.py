@@ -563,6 +563,15 @@ class Tagger:
 
 
 class SongArchive:
+    def __new__(cls, dir_path: PurePath | None = None):
+        context = Zotify.current_context()
+        if context is None:
+            return super().__new__(cls)
+        key = None if dir_path is None else str(dir_path)
+        if key not in context.song_archives:
+            context.song_archives[key] = super().__new__(cls)
+        return context.song_archives[key]
+
     UPDATE_GLOBAL: bool = Zotify.CONFIG.get_update_archive()
     ITEM_ID = "item_id"
     DL_TIMESTAMP = "dl_timestamp"
@@ -581,6 +590,9 @@ class SongArchive:
     }
 
     def __init__(self, dir_path: PurePath | None = None):
+        if getattr(self, '_initialized', False) and not (
+                self._missing and file_has_content(self.path) is not None):
+            return
         self._global = dir_path is None
         self.path = Zotify.CONFIG.get_song_archive_location() if dir_path is None else dir_path / LOCAL_SONG_ARCHIVE
         self.mode = 'a' if file_has_content(self.path) else 'w' # should always exist from Content.create_download_directory()
@@ -588,7 +600,9 @@ class SongArchive:
         self._entries: list[dict[str, str | PurePath]] | None = None
         self._lookup_index: tuple[dict[str, list[tuple[int, dict[str, str | PurePath]]]],
                                   dict[str, list[tuple[int, dict[str, str | PurePath]]]]] | None = None
-        if file_has_content(self.path) is None: self.disabled = True
+        self._missing = file_has_content(self.path) is None
+        if self._missing: self.disabled = True
+        self._initialized = True
 
     def _obj_to_entry(self, obj: DLContent, item_path: PurePath, timestamp: str = None) -> dict[str, str | PurePath]:
         entry = self.ARCHIVE_FORMAT.copy()
@@ -803,7 +817,8 @@ class M3U8:
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write("#EXTM3U\n\n")
             for i, dlc, path in zip(range(len(dlcs)), dlcs, cont_paths):
-                file.write(f"#EXTINF:{dlc.duration_ms // 1000}, {dlc}\n" if dlc else f"# Missing {missing_name} {i+1}\n")
+                duration = dlc.duration_ms // 1000 if dlc and dlc.duration_ms is not None else -1
+                file.write(f"#EXTINF:{duration}, {dlc}\n" if dlc else f"# Missing {missing_name} {i+1}\n")
                 file.write(f"{path}\n\n" if path else "# None\n\n")
 
         Printer.hashtaged(PrintChannel.MANDATORY, f'M3U8 CREATED FOR {self.name}\n' +

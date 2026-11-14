@@ -7,6 +7,16 @@ from zotify.download_journal import DownloadJournal
 
 
 class DownloadJournalTests(unittest.TestCase):
+    def test_completed_paths_excludes_unfinished_and_pathless_records(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            journal = DownloadJournal(temp_dir)
+            for state in ('complete', 'complete_untagged', 'tags_pending',
+                          'audio_verified', 'downloading', 'failed'):
+                journal.set_state('track:' + state, state, final_path=Path(temp_dir) / state)
+            journal.set_state('track:pathless', 'complete')
+            self.assertEqual(set(journal.completed_paths()),
+                             {'track:complete', 'track:complete_untagged'})
+
     def test_state_survives_reopening_journal(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

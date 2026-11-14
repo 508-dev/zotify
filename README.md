@@ -74,6 +74,19 @@ If an artist's URL is given, all albums by the specified artist will be download
 
 ### Basic Flags and Modes
 
+Completed tracks in this library's `.zotify-downloads.sqlite3` journal are skipped
+by default before individual track metadata is fetched. Zotify trusts the saved
+completion state without checking each audio file, so repeat runs can reach new
+tracks quickly. Interrupted downloads and pending tags still go through recovery.
+Older downloads without journal records use the usual archive/file checks, with
+archive indexes reused throughout the run.
+
+Use `--fast-skip false` to check for missing or empty files again, or to apply
+changed output paths/formats to previously completed tracks. This does not scan
+audio for corruption; use library verification for that. `--skip-existing false`
+also disables the fast path. Parent-album downloads and always-check-lyrics mode
+retain their full metadata and download processing.
+
 `(python -m) zotify <{config flag} {config value}> <{mode flag}> <track/album/playlist/episode/artist url>`
 
 | Command Line Config Flag (no value) | Function                                                                                                           |
@@ -173,6 +186,7 @@ Set arguments in the commandline like this: `-ie False` or `--codec mp3`. Wrap c
 | `DISABLE_SONG_ARCHIVE`       | `--disable-song-archive`            | Disable global .song_archive for `SKIP_PREVIOUSLY_DOWNLOADED` checks (NOT RECOMMENDED)  | False          |
 | `DISABLE_DIRECTORY_ARCHIVES` | `--disable-directory-archives`      | Disable local .song_ids in download directories, use filenames to `SKIP_EXISTING`       | False          |
 | `SKIP_EXISTING`              | `-ie`, `--skip-existing`            | Use local .song_ids file to skip songs already present in the expected output directory | True           |
+| `FAST_SKIP`                  | `--fast-skip`                      | Trust completed journal records in this library before fetching track metadata; disable for file checks or changed output settings | True |
 | `SKIP_PREVIOUSLY_DOWNLOADED` | `-ip`, `--skip-prev-downloaded`     | Use the global .song_archive file to skip previously downloaded songs                   | False          |
 | `SKIP_BY_ISRC`               | `-ii`, `--skip-by-isrc`             | Use International Standard Recording Codes to identify and skip (potential) duplicates  | False          |
 

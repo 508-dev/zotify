@@ -82,6 +82,7 @@ CONFIG_VALUES = {
     CUSTOM_FFMEPG_ARGS:         { DEFAULT: '',                        TYPE: str,    ARG: ('--custom-ffmpeg-args'                      ,) },
 
     # Archive Options
+    FAST_SKIP:                  { DEFAULT: 'True',                    TYPE: bool,   ARG: ('--fast-skip'                               ,) },
     SONG_ARCHIVE_LOCATION:      { DEFAULT: '',                        TYPE: str,    ARG: ('--song-archive-location'                   ,) },
     DISABLE_SONG_ARCHIVE:       { DEFAULT: 'False',                   TYPE: bool,   ARG: ('--disable-song-archive'                    ,) },
     DISABLE_DIRECTORY_ARCHIVES: { DEFAULT: 'False',                   TYPE: bool,   ARG: ('--disable-directory-archives'              ,) },
@@ -453,6 +454,10 @@ class Config:
     @classmethod
     def get_skip_existing(cls) -> bool:
         return cls.get(SKIP_EXISTING)
+
+    @classmethod
+    def get_fast_skip(cls) -> bool:
+        return cls.get(FAST_SKIP)
 
     @classmethod
     def get_skip_previously_downloaded(cls) -> bool:

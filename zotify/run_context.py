@@ -12,6 +12,8 @@ class RunContext:
         self.session = session
         self.session_generation = 0
         self.journal = journal
+        self.completed_downloads: dict[str, Path] = {}
+        self.song_archives: dict = {}
         self.root_path = Path(root_path)
         self.events_path = self.root_path / f"zotify-run-{run_id}.jsonl"
 

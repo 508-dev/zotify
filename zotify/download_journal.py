@@ -1,6 +1,6 @@
 """Crash-safe lifecycle journal for downloaded media files.
 
-The journal is intentionally advisory: it never makes an archive entry valid.
+Completed records may be trusted by the optional fast-skip path.
 Only a non-empty, probed, tagged stage atomically published by the downloader
 may be marked complete.
 """
@@ -80,6 +80,15 @@ class DownloadJournal:
         if row is None:
             return None
         return dict(zip(("state", "stage_path", "final_path", "error", "updated_at", "tag_attempts"), row))
+
+    def completed_paths(self) -> dict[str, Path]:
+        """Load finished downloads once, without touching individual media files."""
+        with self._connection() as db:
+            rows = db.execute(
+                "SELECT uri, final_path FROM downloads "
+                "WHERE state IN ('complete', 'complete_untagged') AND final_path IS NOT NULL"
+            ).fetchall()
+        return {uri: Path(path) for uri, path in rows if path}
 
     def increment_tag_attempts(self, uri: str) -> int:
         with self._connection() as db:
