@@ -48,6 +48,25 @@ class UpstreamIntegrationTests(unittest.TestCase):
         fetch.assert_not_called()
         self.assertEqual(results, [{'uri': ':' + uri, 'type': 'track'}])
 
+    def test_fast_skip_preserves_positions_after_partial_legacy_bulk_response(self):
+        done = 'track:done'
+        missing = [f'track:{i:022d}' for i in range(101)]
+        self.query.context.completed_downloads = {done: Path('/done.mp3')}
+        response = {'uri': ':' + missing[0], 'type': 'track', 'name': 'Available track'}
+        uris = [done, *missing[:50], done, *missing[50:], done]
+        with Zotify.bind_run_context(self.query.context), \
+             patch.object(Zotify.CONFIG, 'permit_legacy_api', return_value=True), \
+             patch.object(Zotify, 'invoke_url_bulk', return_value=[response]) as fetch:
+            results = self.api.Content.fetch_uris_metadata(uris, self.api.Track, hide_loader=True)
+        self.assertEqual(fetch.call_args.args[1], [uri.split(':')[-1] for uri in missing])
+        self.assertEqual(len(results), len(uris))
+        self.assertIs(results[1], response)
+        for index, uri in enumerate(uris):
+            if uri == done:
+                self.assertEqual(results[index], {'uri': ':' + done, 'type': 'track'})
+            elif uri != missing[0]:
+                self.assertIsNone(results[index])
+
     def test_fast_skip_retains_paths_for_each_playlist_without_file_or_journal_checks(self):
         track = self.api.Track('track:done')
         path = Path('/missing-on-purpose.mp3')

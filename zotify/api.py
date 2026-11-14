@@ -181,7 +181,7 @@ class Content(HierarchicalNode):
             responses = iter(Content._fetch_uris_metadata(missing, ContClass, loader_text, hide_loader))
             # Keep positions and lightweight objects for playlist ordering and M3U8 export.
             return [{URI: ':' + uri, TYPE: ContClass.type_attr} if uri in completed
-                    else next(responses) for uri in uris]
+                    else next(responses, None) for uri in uris]
         return Content._fetch_uris_metadata(uris, ContClass, loader_text, hide_loader)
 
     @staticmethod
