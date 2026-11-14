@@ -174,6 +174,20 @@ class Content(HierarchicalNode):
     def fetch_uris_metadata(uris: Iterable[str], ContClass: type[Content],
                             loader_text: str = None, hide_loader: bool = False) -> list[dict]:
         uris = list(uris)
+        context = Zotify.current_context()
+        completed = context.completed_downloads if context and ContClass is Track else {}
+        if completed and any(uri in completed for uri in uris):
+            missing = [uri for uri in uris if uri not in completed]
+            responses = iter(Content._fetch_uris_metadata(missing, ContClass, loader_text, hide_loader))
+            # Keep positions and lightweight objects for playlist ordering and M3U8 export.
+            return [{URI: ':' + uri, TYPE: ContClass.type_attr} if uri in completed
+                    else next(responses) for uri in uris]
+        return Content._fetch_uris_metadata(uris, ContClass, loader_text, hide_loader)
+
+    @staticmethod
+    def _fetch_uris_metadata(uris: Iterable[str], ContClass: type[Content],
+                             loader_text: str = None, hide_loader: bool = False) -> list[dict]:
+        uris = list(uris)
         if not uris: return []
         elif not loader_text: loader_text = ContClass.type_attr
 
@@ -375,6 +389,9 @@ class DLContent(Content):
 
     def check_skippable(self, parent_stack: ParentStack) -> bool:
         from zotify.metadata import SongArchive
+        if (isinstance(self, Track) and parent_stack and isinstance(parent_stack[0], Query)
+                and parent_stack[0].fast_skip_track(self, parent_stack)):
+            return True
         # Interrupted publication or tagging must be recovered before archive/file skips.
         if isinstance(self, Track):
             context = parent_stack[0].context if parent_stack and isinstance(parent_stack[0], Query) else None
@@ -915,6 +932,9 @@ class Track(DLContent, HasArtists, HasGenres, IsAddable, IsFavoritable):
         return True
 
     def download(self, parent_stack: ParentStack) -> None:
+        if parent_stack and isinstance(parent_stack[0], Query):
+            if parent_stack[0].fast_skip_track(self, parent_stack):
+                return
         journal = self._journal(parent_stack)
         prior_state = journal.get(self.uri)
         if prior_state and prior_state["state"] == "audio_verified":
@@ -1514,6 +1534,24 @@ class Query(Container):
     def record_run_event(self, event: str, **fields) -> None:
         self.context.record(event, **fields)
 
+    def load_completed_downloads(self) -> None:
+        self.context.completed_downloads = {}
+        if (Zotify.CONFIG.get_fast_skip() and Zotify.CONFIG.get_skip_existing()
+                and not Zotify.CONFIG.get_download_parent_album()
+                and not Zotify.CONFIG.get_always_check_lyrics()):
+            self.context.completed_downloads = self.context.journal.completed_paths()
+
+    def fast_skip_track(self, track: Track, parent_stack: ParentStack) -> bool:
+        path = self.context.completed_downloads.get(track.uri)
+        if path is None:
+            return False
+        # Trust only completed journal records, without stat, probing, or archive writes.
+        track._downloaded = True
+        stack = ParentStack(parent_stack.copy())
+        track._real_filepaths[stack] = path
+        self._run_skipped.add(track.uri)
+        return True
+
     @staticmethod
     def bulk_regex_urls(urls: str | list[str]) -> list[list[str]]:
         urls = strlist_compressor(urls) if isinstance(urls, list) else urls
@@ -1619,12 +1657,12 @@ class Query(Container):
             MetadataIO.to_zmd(self.id, self.ALL_NODES)
 
     def skip_existing_before_enrichment(self):
-        if Zotify.CONFIG.get_skip_by_isrc():
-            return
         def visit(obj, parents):
             if isinstance(obj, Track):
                 if not obj.is_local:
-                    obj.check_skippable(ParentStack([self, *parents, obj]))
+                    stack = ParentStack([self, *parents, obj])
+                    if not self.fast_skip_track(obj, stack) and not Zotify.CONFIG.get_skip_by_isrc():
+                        obj.check_skippable(stack)
             elif isinstance(obj, Container):
                 for child in obj._main_items:
                     visit(child, [*parents, obj])
@@ -1796,6 +1834,7 @@ class Query(Container):
     def execute(self):
         run_started = monotonic()
         self.record_run_event("run_started")
+        self.load_completed_downloads()
         metadata_started = monotonic()
         self.handle_zmd_prefetch()
         self.parse_query_metadata(self.fetch_query_metadata())
